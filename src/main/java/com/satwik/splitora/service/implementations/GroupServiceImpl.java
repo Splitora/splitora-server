@@ -1,6 +1,7 @@
 package com.satwik.splitora.service.implementations;
 
 import com.satwik.splitora.constants.ErrorMessages;
+import com.satwik.splitora.exception.BadRequestException;
 import com.satwik.splitora.exception.DataNotFoundException;
 import com.satwik.splitora.persistence.dto.expense.ExpenseListDTO;
 import com.satwik.splitora.persistence.dto.group.*;
@@ -15,6 +16,9 @@ import com.satwik.splitora.repository.GroupMembersRepository;
 import com.satwik.splitora.repository.GroupRepository;
 import com.satwik.splitora.repository.UserRepository;
 import com.satwik.splitora.service.interfaces.GroupService;
+import com.satwik.splitora.settlement.model.Transaction;
+import com.satwik.splitora.settlement.strategy.SettlementStrategy;
+import com.satwik.splitora.settlement.strategy.SortSettlementStrategy;
 import jakarta.transaction.Transactional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -83,7 +87,11 @@ public class GroupServiceImpl implements GroupService {
     public String addGroupMembers(UUID groupId, UUID memberId) {
         Group group = groupRepository.findById(groupId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.GROUP_NOT_FOUND));
         User member = userRepository.findById(memberId).orElseThrow(() -> new DataNotFoundException("User not found to add as member!"));
-        // TODO : add check to avoid add members to default group
+
+        if(group.isDefaultGroup()) {
+            throw new BadRequestException("You can't add members to the default group!");
+        }
+
         GroupMembers groupMembers = new GroupMembers();
         groupMembers.setMember(member);
         groupMembers.setGroup(group);
@@ -131,6 +139,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    @Transactional
     @PreAuthorize("@authorizationService.isGroupOwner(#groupId)")
     public GroupDTO findGroupByGroupId(UUID groupId) {
         Group group = groupRepository.findById(groupId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.GROUP_NOT_FOUND));
@@ -185,5 +194,22 @@ public class GroupServiceImpl implements GroupService {
         group.setGroupName(groupUpdateRequest.getGroupName());
         groupRepository.save(group);
         return "%s - Group update successfully!".formatted(group.getId());
+    }
+
+    @Override
+    @Transactional
+    @PreAuthorize("@authorizationService.isGroupOwner(#groupId)")
+    public BalanceTransaction getBalanceTransactions(UUID groupId) {
+        Group group = groupRepository.findById(groupId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.GROUP_NOT_FOUND));
+        // Fetch all the transactions related to the group
+        List<Transaction<UUID>> transactions = expenseRepository.findTransactionsByGroupId(group.getId());
+        SettlementStrategy<UUID> settlementStrategy = new SortSettlementStrategy<>();
+        List<Transaction<UUID>> balancingTransaction = settlementStrategy.settle(transactions);
+        BalanceTransaction balanceTransaction = new BalanceTransaction();
+        balanceTransaction.setGroupId(group.getId());
+        balanceTransaction.setGroupName(group.getGroupName());
+        balanceTransaction.setTransactions(balancingTransaction);
+
+        return balanceTransaction;
     }
 }

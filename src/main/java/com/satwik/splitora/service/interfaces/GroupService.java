@@ -1,5 +1,6 @@
 package com.satwik.splitora.service.interfaces;
 
+import com.satwik.splitora.persistence.dto.group.BalanceTransaction;
 import com.satwik.splitora.persistence.dto.group.GroupDTO;
 import com.satwik.splitora.persistence.dto.group.GroupListDTO;
 import com.satwik.splitora.persistence.dto.group.GroupUpdateRequest;
@@ -24,4 +25,6 @@ public interface GroupService {
     List<UserDTO> findMembers(UUID groupId);
 
     String deleteMembers(UUID groupId, UUID groupMemberId);
+
+    BalanceTransaction getBalanceTransactions(UUID groupId);
 }

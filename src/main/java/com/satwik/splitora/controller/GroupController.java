@@ -1,6 +1,7 @@
 package com.satwik.splitora.controller;
 
 import com.satwik.splitora.persistence.dto.ResponseModel;
+import com.satwik.splitora.persistence.dto.group.BalanceTransaction;
 import com.satwik.splitora.persistence.dto.group.GroupDTO;
 import com.satwik.splitora.persistence.dto.group.GroupListDTO;
 import com.satwik.splitora.persistence.dto.group.GroupUpdateRequest;
@@ -177,6 +178,24 @@ public class GroupController {
         String response = groupService.deleteMembers(groupId, groupMemberId);
         ResponseModel<String> responseModel = ResponseUtil.success(response, HttpStatus.OK, "Member removed from group successfully");
         log.info("Delete Endpoint: delete a member with response: {}", responseModel);
+        return ResponseEntity.status(HttpStatus.OK).body(responseModel);
+    }
+
+    /**
+     * Retrieves balance transactions for a group.
+     *
+     * This endpoint processes the request to get balance transactions for a group identified by the given group ID.
+     * It logs the incoming request and the resulting response.
+     *
+     * @param groupId the UUID of the group for which balance transactions are to be retrieved.
+     * @return a ResponseEntity containing a BalanceTransaction object with the group's balance transactions.
+     */
+    @GetMapping("/getBalanceTransactions/{groupId}")
+    public ResponseEntity<ResponseModel<BalanceTransaction>> getBalanceTransactions(@PathVariable UUID groupId) {
+        log.info("Get Endpoint: get balance transactions for group with id: {}", groupId);
+        BalanceTransaction transactions = groupService.getBalanceTransactions(groupId);
+        ResponseModel<BalanceTransaction> responseModel = ResponseUtil.success(transactions, HttpStatus.OK, "Balance transactions retrieved successfully");
+        log.info("Get Endpoint: get balance transactions response: {}", responseModel);
         return ResponseEntity.status(HttpStatus.OK).body(responseModel);
     }
 }
