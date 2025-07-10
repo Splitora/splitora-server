@@ -20,7 +20,7 @@ public class Group extends BaseEntity {
     @Column(name = "default_group")
     private boolean defaultGroup;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
 

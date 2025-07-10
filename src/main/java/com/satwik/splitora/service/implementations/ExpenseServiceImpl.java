@@ -53,8 +53,8 @@ public class ExpenseServiceImpl implements ExpenseService {
         User payer = expenseDTO.getPayerId() != null ? userRepository.findById(expenseDTO.getPayerId()).orElseThrow(() -> new DataNotFoundException("Payer not found!")) : authorizationService.getAuthorizedUser();
         Group group = groupRepository.findById(groupId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.GROUP_NOT_FOUND));
 
-        // checking if payer is a member of the group
-        if(!groupMembersRepository.existsByGroupIdAndMemberId(group.getId(), payer.getId()))
+        // checking if payer is a member of the group or owner of the group
+        if(group.getUser().getId() != payer.getId() && !groupMembersRepository.existsByGroupIdAndMemberId(group.getId(), payer.getId()))
             throw new BadRequestException("Payer is not a member of this group!");
 
         Expense expense = new Expense();
@@ -70,6 +70,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         response.setPayerId(expense.getPayer().getId());
         response.setDescription(expense.getDescription());
         response.setPayerName(expense.getPayer().getUsername());
+        response.setDate(expense.getCreatedOn());
         return response;
     }
 
@@ -91,9 +92,10 @@ public class ExpenseServiceImpl implements ExpenseService {
         ExpenseDTO response = new ExpenseDTO();
         response.setExpenseId(expense.getId());
         response.setAmount(expense.getAmount());
+        response.setPayerId(expense.getPayer().getId());
         response.setDescription(expense.getDescription());
         response.setPayerName(expense.getPayer().getUsername());
-        response.setPayerId(expense.getPayer().getId());
+        response.setDate(expense.getCreatedOn());
 
         return response;
     }
