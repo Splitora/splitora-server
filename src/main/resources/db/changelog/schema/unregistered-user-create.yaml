@@ -1,10 +1,10 @@
 databaseChangeLog:
   - changeSet:
-      id: create-expense-table
+      id: create-unregistered-user-table
       author: splitora
       changes:
         - createTable:
-            tableName: expense
+            tableName: unregistered_user
             columns:
               - column:
                   name: id
@@ -26,20 +26,11 @@ databaseChangeLog:
                   type: TIMESTAMP
                   defaultValueComputed: CURRENT_TIMESTAMP
               - column:
-                  name: group_id
-                  type: BINARY(16)
-                  constraints:
-                    foreignKeyName: fk_expense_group
-                    references: group_table(id)
-              - column:
-                  name: payer_id
-                  type: BINARY(16)
-                  constraints:
-                    foreignKeyName: fk_expense_payer
-                    references: group_members(id)
-              - column:
-                  name: amount
-                  type: DOUBLE
-              - column:
-                  name: description
+                  name: email
                   type: VARCHAR(255)
+              - column:
+                  name: phone_country_code
+                  type: VARCHAR(4)
+              - column:
+                  name: phone_number
+                  type: BIGINT

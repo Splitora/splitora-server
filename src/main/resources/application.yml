@@ -51,18 +51,4 @@ jwt:
 
 # File path for the report
 my:
-    reportFilePath: /home/ongraph/Downloads/
-
-app:
-    initial-users:
-        super-admin:
-            username: ${SUPERADMIN_USERNAME}
-            password: ${SUPERADMIN_PASSWORD}
-            email: ${SUPERADMIN_EMAIL}
-        regular-users:
-            - username: ${USER1_USERNAME}
-              password: ${USER1_PASSWORD}
-              email: ${USER1_EMAIL}
-            - username: ${USER2_USERNAME}
-              password: ${USER2_PASSWORD}
-              email: ${USER2_EMAIL}
+    reportFilePath: /path

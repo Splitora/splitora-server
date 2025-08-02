@@ -13,8 +13,6 @@ public class OwerDTO {
 
     UUID userId;
 
-    String username;
-
     double amount;
 
 }

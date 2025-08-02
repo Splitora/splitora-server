@@ -53,7 +53,7 @@ public class AuthorizationService {
             return true;
 
         Expense expense = expenseRepository.findById(expenseId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.EXPENSE_NOT_FOUND));
-        UUID ownerId = expense.getPayer().getId();
+        UUID ownerId = expense.getCreatedBy();
         return loggedInUser.getUserId().equals(ownerId);
     }
 

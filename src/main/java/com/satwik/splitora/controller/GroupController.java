@@ -1,10 +1,7 @@
 package com.satwik.splitora.controller;
 
 import com.satwik.splitora.persistence.dto.ResponseModel;
-import com.satwik.splitora.persistence.dto.group.BalanceTransaction;
-import com.satwik.splitora.persistence.dto.group.GroupDTO;
-import com.satwik.splitora.persistence.dto.group.GroupListDTO;
-import com.satwik.splitora.persistence.dto.group.GroupUpdateRequest;
+import com.satwik.splitora.persistence.dto.group.*;
 import com.satwik.splitora.persistence.dto.user.UserDTO;
 import com.satwik.splitora.service.interfaces.GroupService;
 import com.satwik.splitora.util.ResponseUtil;
@@ -129,14 +126,14 @@ public class GroupController {
      * the resulting response.
      *
      * @param groupId the UUID of the group to which the member will be added.
-     * @param memberId the UUID of the member to be added to the group.
+     * @param addMemberRequest the data transfer object containing the details of the member to be added.
      * @return a ResponseEntity containing a string response message indicating the
      *         result of the member addition process.
      */
     @PostMapping("/add-member/{groupId}")
-    public ResponseEntity<ResponseModel<String>> addGroupMembers(@PathVariable UUID groupId, @RequestParam UUID memberId) {
-        log.info("Post Endpoint: add member with memberId: {} to the group with groupId: {}", memberId, groupId);
-        String response = groupService.addGroupMembers(groupId, memberId);
+    public ResponseEntity<ResponseModel<String>> addGroupMembers(@PathVariable UUID groupId, @RequestBody GroupMemberDTO addMemberRequest) {
+        log.info("Post Endpoint: add member with groupId: {}", groupId);
+        String response = groupService.addGroupMembers(groupId, addMemberRequest);
         ResponseModel<String> responseModel = ResponseUtil.success(response, HttpStatus.OK, "Member added to group successfully");
         log.info("Post Endpoint: add member with response: {}", responseModel);
         return ResponseEntity.status(HttpStatus.OK).body(responseModel);

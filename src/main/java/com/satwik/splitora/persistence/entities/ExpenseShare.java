@@ -16,8 +16,8 @@ public class ExpenseShare extends BaseEntity {
     private Expense expense;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "group_members_id")
+    private GroupMembers groupMembers;
 
     @Column(name = "shared_amount")
     private double sharedAmount;

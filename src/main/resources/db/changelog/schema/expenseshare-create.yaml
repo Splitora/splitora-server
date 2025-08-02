@@ -32,11 +32,11 @@ databaseChangeLog:
                     foreignKeyName: fk_expenseshare_expense
                     references: expense(id)
               - column:
-                  name: user_id
+                  name: group_members_id
                   type: BINARY(16)
                   constraints:
-                    foreignKeyName: fk_expenseshare_user
-                    references: user(id)
+                    foreignKeyName: fk_expenseshare_group_members
+                    references: group_members(id)
               - column:
                   name: shared_amount
                   type: DOUBLE

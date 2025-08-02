@@ -15,7 +15,7 @@ databaseChangeLog:
                   ) VALUES
                   (
                     UNHEX('3719917506b14643afc7b8815fdc81cf'), NULL, '2025-05-26 13:24:27', NULL, '2025-05-26 13:24:27',
-                    'nakul_test_90', 'nakul@example.com', '+91', '0',
+                    'nakul_test_90', 'nakul@example.com', '+91', '2',
                     '$2a$10$txo1PsQ7M.2uLv/HO.S0TuRHWJPvV8X2oO4gEh/QBNfTX8KIHEuma', 'NORMAL', 'USER'
                   ),
                   (
@@ -27,4 +27,4 @@ databaseChangeLog:
                     UNHEX('784ad2e326344ba58c5028c8ee56bcd8'), NULL, '2025-05-26 13:24:27', NULL, '2025-05-26 13:24:27',
                     'gaurav_test_22', 'gaurav@example.com', '+91', '1',
                     '$2a$10$ILSK/k88Rd6SUbiMBHg/IOhuWGk3N5WqRDLz3gDL0.ne.6nANMeaG', 'NORMAL', 'USER'
-                  ) ;
+                  );

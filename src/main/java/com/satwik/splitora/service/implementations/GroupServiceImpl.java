@@ -7,14 +7,8 @@ import com.satwik.splitora.persistence.dto.expense.ExpenseListDTO;
 import com.satwik.splitora.persistence.dto.group.*;
 import com.satwik.splitora.persistence.dto.user.PhoneDTO;
 import com.satwik.splitora.persistence.dto.user.UserDTO;
-import com.satwik.splitora.persistence.entities.Expense;
-import com.satwik.splitora.persistence.entities.Group;
-import com.satwik.splitora.persistence.entities.GroupMembers;
-import com.satwik.splitora.persistence.entities.User;
-import com.satwik.splitora.repository.ExpenseRepository;
-import com.satwik.splitora.repository.GroupMembersRepository;
-import com.satwik.splitora.repository.GroupRepository;
-import com.satwik.splitora.repository.UserRepository;
+import com.satwik.splitora.persistence.entities.*;
+import com.satwik.splitora.repository.*;
 import com.satwik.splitora.service.interfaces.GroupService;
 import com.satwik.splitora.settlement.model.Transaction;
 import com.satwik.splitora.settlement.strategy.SettlementStrategy;
@@ -39,17 +33,21 @@ public class GroupServiceImpl implements GroupService {
 
     private final GroupMembersRepository groupMembersRepository;
 
+    private final UnregisteredUserRepository unregisteredUserRepository;
+
     public GroupServiceImpl (
             AuthorizationService authorizationService,
             GroupRepository groupRepository,
             UserRepository userRepository,
             ExpenseRepository expenseRepository,
-            GroupMembersRepository groupMembersRepository) {
+            GroupMembersRepository groupMembersRepository,
+            UnregisteredUserRepository unregisteredUserRepository) {
         this.authorizationService = authorizationService;
         this.groupRepository = groupRepository;
         this.userRepository = userRepository;
         this.expenseRepository = expenseRepository;
         this.groupMembersRepository = groupMembersRepository;
+        this.unregisteredUserRepository = unregisteredUserRepository;
     }
 
 
@@ -61,7 +59,14 @@ public class GroupServiceImpl implements GroupService {
         group.setGroupName(groupDTO.getGroupName());
         group.setUser(user);
         group.setDefaultGroup(false);
-        groupRepository.save(group);
+        Group savedGroup = groupRepository.save(group);
+
+        // adding user as the first member of the group
+        GroupMembers groupMembers = new GroupMembers();
+        groupMembers.setGroup(savedGroup);
+        groupMembers.setMember(user);
+        groupMembers.setName(user.getUsername());
+        groupMembersRepository.save(groupMembers);
 
         return "Group created successfully!";
     }
@@ -81,27 +86,86 @@ public class GroupServiceImpl implements GroupService {
         return groupListDTO;
     }
 
+    /**
+     * Adds a member to the group. If the member is not registered, they will be added as an unregistered user.
+     * If the member is already registered or unregistered, they will be added to the group.
+     *
+     * @param groupId          The ID of the group to which the member is being added.
+     * @param addMemberRequest The details of the member to be added.
+     * @return A success message indicating that the member was added successfully.
+     */
     @Override
     @Transactional
     @PreAuthorize("@authorizationService.isGroupOwner(#groupId)")
-    public String addGroupMembers(UUID groupId, UUID memberId) {
-        Group group = groupRepository.findById(groupId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.GROUP_NOT_FOUND));
-        User member = userRepository.findById(memberId).orElseThrow(() -> new DataNotFoundException("User not found to add as member!"));
+    public String addGroupMembers(UUID groupId, GroupMemberDTO addMemberRequest) {
 
+        Group group = groupRepository.findById(groupId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.GROUP_NOT_FOUND));
+        // Check if the group is a default group
         if(group.isDefaultGroup()) {
             throw new BadRequestException("You can't add members to the default group!");
         }
 
+        // check for contact number or email in the request
+        checkForContactOrEmail(addMemberRequest);
+
+        // Check if the user is already registered or unregistered
+        Optional<User> user = userRepository.findByEmailOrPhone(
+                addMemberRequest.getEmail(),
+                addMemberRequest.getPhone() != null ? addMemberRequest.getPhone().getPhoneNumber() : null,
+                addMemberRequest.getPhone() != null ? addMemberRequest.getPhone().getCountryCode() : null);
+
+        Optional<UnregisteredUser> unregisteredUser = unregisteredUserRepository.findByEmailOrPhone(
+                addMemberRequest.getEmail(),
+                addMemberRequest.getPhone() != null ? addMemberRequest.getPhone().getPhoneNumber() : null,
+                addMemberRequest.getPhone() != null ? addMemberRequest.getPhone().getCountryCode() : null
+        );
+
+        // If the user is already registered, add them to a group as a registered member
+        // If the user is unregistered, add them to a group as an unregistered member
+        User registeredMember = null;
+        UnregisteredUser unregisteredMember = null;
+        if (user.isPresent()) {
+            registeredMember = user.get();
+        } else if (unregisteredUser.isPresent()) {
+            unregisteredMember = unregisteredUser.get();
+        } else {
+            UnregisteredUser newUnregisteredUser = new UnregisteredUser();
+            if (addMemberRequest.getEmail() != null && !addMemberRequest.getEmail().trim().isBlank()) {
+                newUnregisteredUser.setEmail(addMemberRequest.getEmail());
+            } else {
+                newUnregisteredUser.setCountryCode(addMemberRequest.getPhone().getCountryCode());
+                newUnregisteredUser.setPhoneNumber(addMemberRequest.getPhone().getPhoneNumber());
+            }
+            unregisteredMember = unregisteredUserRepository.save(newUnregisteredUser);
+        }
         GroupMembers groupMembers = new GroupMembers();
-        groupMembers.setMember(member);
         groupMembers.setGroup(group);
-        groupMembersRepository.save(groupMembers);
+        groupMembers.setMember(registeredMember);
+        groupMembers.setUnregisteredMember(unregisteredMember);
+        groupMembers.setName(addMemberRequest.getName());
+
+        UUID memberId = groupMembersRepository.save(groupMembers).getId();
+
         return "User - " + memberId + " successfully added as member of the group.";
+    }
+
+    // This method checks if either email or phone number is provided in the request to add a member.
+    private void checkForContactOrEmail(GroupMemberDTO addMemberRequest) {
+        boolean isEmailEmpty = addMemberRequest.getEmail() == null || addMemberRequest.getEmail().trim().isEmpty();
+        boolean isPhoneEmpty = addMemberRequest.getPhone() == null
+                || addMemberRequest.getPhone().getPhoneNumber() == 0
+                || addMemberRequest.getPhone().getCountryCode() == null;
+        if(isEmailEmpty && isPhoneEmpty)
+            throw new BadRequestException("Either email or phone number must be provided to add a member!");
     }
 
     @Override
     @PreAuthorize("@authorizationService.isGroupOwner(#groupId)")
     public List<UserDTO> findMembers(UUID groupId) {
+
+        // TODO : change this to also user unregistered user
+        // TODO : change this to return user name and id if exits not member from group members table
+
         Group group = groupRepository.findById(groupId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.GROUP_NOT_FOUND));
         List<GroupMembers> groupMembersList = groupMembersRepository.findByGroupId(group.getId());
         List<UserDTO> userDTOS = new ArrayList<>();
@@ -175,12 +239,22 @@ public class GroupServiceImpl implements GroupService {
         List<GroupMembers> groupMembers = group.getGroupMembers();
         List<GroupMemberDTO> groupMemberDTOS = new ArrayList<>();
         for (GroupMembers groupMember : groupMembers) {
-            User user1 = groupMember.getMember();
+            User registeredUser = groupMember.getMember();
+            UnregisteredUser unregisteredUser = groupMember.getUnregisteredMember();
+
             GroupMemberDTO groupMemberDTO = new GroupMemberDTO();
             groupMemberDTO.setGroupMemberId(groupMember.getId());
-            groupMemberDTO.setMemberId(user1.getId());
-            groupMemberDTO.setEmail(user1.getEmail());
-            groupMemberDTO.setUsername(user1.getUsername());
+            groupMemberDTO.setName(groupMember.getName());
+            if (registeredUser != null) {
+                // If the member is registered user
+                groupMemberDTO.setEmail(registeredUser.getEmail());
+                groupMemberDTO.setPhone(new PhoneDTO(registeredUser.getCountryCode(), registeredUser.getPhoneNumber()));
+                groupMemberDTO.setUsername(registeredUser.getUsername());
+            } else {
+                // If member is unregistered user
+                groupMemberDTO.setEmail(unregisteredUser.getEmail());
+                groupMemberDTO.setPhone(new PhoneDTO(unregisteredUser.getCountryCode(), unregisteredUser.getPhoneNumber()));
+            }
             groupMemberDTOS.add(groupMemberDTO);
         }
         return groupMemberDTOS;
@@ -204,11 +278,28 @@ public class GroupServiceImpl implements GroupService {
         // Fetch all the transactions related to the group
         List<Transaction<UUID>> transactions = expenseRepository.findTransactionsByGroupId(group.getId());
         SettlementStrategy<UUID> settlementStrategy = new SortSettlementStrategy<>();
-        List<Transaction<UUID>> balancingTransaction = settlementStrategy.settle(transactions);
+        List<Transaction<UUID>> balancingTransactions = settlementStrategy.settle(transactions);
+
+        List<UserTransaction> userTransactions = balancingTransactions.stream().map(transaction -> {
+            GroupMembers debtor = groupMembersRepository.findById(transaction.getDebtor()).orElseThrow(() -> new DataNotFoundException("Debtor not found in group members"));
+            GroupMembers creditor = groupMembersRepository.findById(transaction.getCreditor()).orElseThrow(() -> new DataNotFoundException("Creditor not found in group members"));
+            String debtorName = debtor.getName();
+            String creditorName = creditor.getName();
+
+            UserTransaction userTransaction = new UserTransaction();
+            userTransaction.setDebtorId(transaction.getDebtor());
+            userTransaction.setDebtorName(debtorName);
+            userTransaction.setCreditorId(transaction.getCreditor());
+            userTransaction.setCreditorName(creditorName);
+            userTransaction.setAmount(transaction.getAmount());
+
+            return userTransaction;
+        }).toList();
+
         BalanceTransaction balanceTransaction = new BalanceTransaction();
         balanceTransaction.setGroupId(group.getId());
         balanceTransaction.setGroupName(group.getGroupName());
-        balanceTransaction.setTransactions(balancingTransaction);
+        balanceTransaction.setTransactions(userTransactions);
 
         return balanceTransaction;
     }
