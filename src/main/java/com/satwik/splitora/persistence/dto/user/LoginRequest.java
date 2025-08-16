@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class LoginRequest {
 
     @NotBlank(message = "User email should not be blank or null")
-    String userEmail;
+    String email;
 
     @NotBlank(message = "Password should not be null or empty.")
     @Size(min = 8)

@@ -29,7 +29,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthenticationResponse authenticateUser(LoginRequest loginRequest) {
-        User user = userRepository.findByEmail(loginRequest.getUserEmail()).orElseThrow(() -> new DataNotFoundException("User not found."));
+        User user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(() -> new DataNotFoundException("User not found."));
         if(!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new BadRequestException("Invalid User mail or password!");
         }

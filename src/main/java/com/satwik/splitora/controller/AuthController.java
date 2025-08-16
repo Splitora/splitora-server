@@ -6,13 +6,13 @@ import com.satwik.splitora.persistence.dto.user.LoginRequest;
 import com.satwik.splitora.persistence.dto.user.RefreshTokenRequest;
 import com.satwik.splitora.service.interfaces.AuthService;
 import com.satwik.splitora.util.ResponseUtil;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -31,7 +31,7 @@ public class AuthController {
      * @return a ResponseEntity containing a ResponseModel with the authentication response.
      */
     @PostMapping("/login")
-    public ResponseEntity<ResponseModel<AuthenticationResponse>> loginUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ResponseModel<AuthenticationResponse>> loginUser(@RequestBody @Valid LoginRequest loginRequest) {
         log.info("Post Endpoint: login user with request: {}", loginRequest);
         AuthenticationResponse response = authService.authenticateUser(loginRequest);
         ResponseModel<AuthenticationResponse> responseModel = ResponseUtil.success(response, HttpStatus.OK, "User logged in successfully");

@@ -25,8 +25,6 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     private final GroupRepository groupRepository;
 
-    private final UserRepository userRepository;
-
     private final GroupMembersRepository groupMembersRepository;
 
     private final ExpenseShareRepository expenseShareRepository;
@@ -34,13 +32,11 @@ public class ExpenseServiceImpl implements ExpenseService {
     public ExpenseServiceImpl (AuthorizationService authorizationService,
                                   ExpenseRepository expenseRepository,
                                   GroupRepository groupRepository,
-                                  UserRepository userRepository,
                                   GroupMembersRepository groupMembersRepository,
                                   ExpenseShareRepository expenseShareRepository) {
         this.authorizationService = authorizationService;
         this.expenseRepository = expenseRepository;
         this.groupRepository = groupRepository;
-        this.userRepository = userRepository;
         this.groupMembersRepository = groupMembersRepository;
         this.expenseShareRepository = expenseShareRepository;
     }
@@ -50,11 +46,12 @@ public class ExpenseServiceImpl implements ExpenseService {
     @PreAuthorize("@authorizationService.isGroupOwner(#groupId)")
     public ExpenseDTO createGroupedExpense(UUID groupId, ExpenseDTO expenseDTO) {
 
-        User payer = expenseDTO.getPayerId() != null ? userRepository.findById(expenseDTO.getPayerId()).orElseThrow(() -> new DataNotFoundException("Payer not found!")) : authorizationService.getAuthorizedUser();
+        User creator = authorizationService.getAuthorizedUser();
+        GroupMembers payer = groupMembersRepository.findById(expenseDTO.getPayerId()).orElseThrow(() -> new DataNotFoundException("Payer not found!"));
         Group group = groupRepository.findById(groupId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.GROUP_NOT_FOUND));
 
         // checking if payer is a member of the group or owner of the group
-        if(group.getUser().getId() != payer.getId() && !groupMembersRepository.existsByGroupIdAndMemberId(group.getId(), payer.getId()))
+        if(group.getId() != payer.getGroup().getId())
             throw new BadRequestException("Payer is not a member of this group!");
 
         Expense expense = new Expense();
@@ -62,6 +59,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         expense.setDescription(expenseDTO.getDescription());
         expense.setGroup(group);
         expense.setPayer(payer);
+        expense.setCreatedBy(creator.getId());
         expenseRepository.save(expense);
 
         ExpenseDTO response = new ExpenseDTO();
@@ -69,7 +67,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         response.setAmount(expense.getAmount());
         response.setPayerId(expense.getPayer().getId());
         response.setDescription(expense.getDescription());
-        response.setPayerName(expense.getPayer().getUsername());
+        response.setPayerName(payer.getName());
         response.setDate(expense.getCreatedOn());
         return response;
     }
@@ -79,7 +77,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     public ExpenseDTO createNonGroupedExpense(ExpenseDTO expenseDTO) {
 
         User user = authorizationService.getAuthorizedUser();
-        User payer = expenseDTO.getPayerId() != null ? userRepository.findById(expenseDTO.getPayerId()).orElseThrow(() -> new DataNotFoundException("Payer not found!")) : authorizationService.getAuthorizedUser();
+        GroupMembers payer = groupMembersRepository.findById(expenseDTO.getPayerId()).orElseThrow(() -> new DataNotFoundException("Payer not found!"));
         Group group = groupRepository.findDefaultGroup(user.getId()).orElseThrow(() -> new DataNotFoundException(ErrorMessages.GROUP_NOT_FOUND));
 
         Expense expense = new Expense();
@@ -87,6 +85,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         expense.setDescription(expenseDTO.getDescription());
         expense.setGroup(group);
         expense.setPayer(payer);
+        expense.setCreatedBy(user.getId());
         expense = expenseRepository.save(expense);
 
         ExpenseDTO response = new ExpenseDTO();
@@ -94,7 +93,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         response.setAmount(expense.getAmount());
         response.setPayerId(expense.getPayer().getId());
         response.setDescription(expense.getDescription());
-        response.setPayerName(expense.getPayer().getUsername());
+        response.setPayerName(payer.getName());
         response.setDate(expense.getCreatedOn());
 
         return response;
@@ -111,25 +110,32 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     @Transactional
     @PreAuthorize("@authorizationService.isExpenseOwner(#expenseId)")
-    public String addUserToExpense(UUID expenseId, UUID owerId) {
-
+    public String addOwersToExpense(UUID expenseId, ExpenseMembersRequest expenseMembersRequest) {
+        // TODO : payer should not be added as ower
         Expense expense = expenseRepository.findById(expenseId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.EXPENSE_NOT_FOUND));
-        User ower = userRepository.findById(owerId).orElseThrow(() -> new DataNotFoundException("Ower not found"));
-        if(expense.getPayer().getId().equals(ower.getId()))
-            throw new BadRequestException("Payer cannot be added as ower to the expense!");
+        if(expenseMembersRequest.getMembersId().isEmpty()) throw new BadRequestException("No owers provided to add to the expense!");
+        for (UUID owerId : expenseMembersRequest.getMembersId()) {
+            GroupMembers ower = groupMembersRepository.findById(owerId).orElseThrow(() -> new DataNotFoundException("Ower not found"));
+            addSingleOwerToExpense(expense, ower);
+        }
+
+        return "Success! Owers are added to the expense.";
+    }
+
+    private void addSingleOwerToExpense(Expense expense, GroupMembers ower) {
+
         ExpenseShare expenseShare = new ExpenseShare();
         expenseShare.setExpense(expense);
-        expenseShare.setUser(ower);
+        expenseShare.setGroupMembers(ower);
         double sharedAmount = expense.getAmount() /
-                (expenseShareRepository.findCountOfOwer(expenseId) + 2); // old ower plus one for payer and one for new ower
+                (expenseShareRepository.findCountOfOwer(expense.getId()) + 1); // old ower plus one for payer and one for new ower
         expenseShare.setSharedAmount(sharedAmount);
-        List<ExpenseShare> shareList = expenseShareRepository.findExpenseShareById(expenseId);
+        List<ExpenseShare> shareList = expenseShareRepository.findExpenseShareById(expense.getId());
         for (ExpenseShare share : shareList) {
             share.setSharedAmount(sharedAmount);
             expenseShareRepository.save(share);
         }
         expenseShareRepository.save(expenseShare);
-        return "Success! Ower is added to the expense.";
     }
 
     @Override
@@ -137,10 +143,10 @@ public class ExpenseServiceImpl implements ExpenseService {
     @PreAuthorize("@authorizationService.isExpenseOwner(#expenseId)")
     public String removeUserFromExpense(UUID expenseId, UUID owerId) {
         Expense expense = expenseRepository.findById(expenseId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.EXPENSE_NOT_FOUND));
-        User ower = userRepository.findById(owerId).orElseThrow(() -> new DataNotFoundException("Ower not found"));
-        if(!expenseShareRepository.existsByExpenseIdAndUserId(expense.getId(), ower.getId()))
+        GroupMembers ower = groupMembersRepository.findById(owerId) .orElseThrow(() -> new DataNotFoundException("Ower not found"));
+        if(!expenseShareRepository.existsByExpenseIdAndMemberId(expense.getId(), ower.getId()))
             throw new BadRequestException("Ower is not part of the expense. Hence, cannot be removed!");
-        expenseShareRepository.deleteByExpenseIdAndUserId(expense.getId(), ower.getId());
+        expenseShareRepository.deleteByExpenseIdAndMemberId(expense.getId(), ower.getId());
         double sharedAmount = expense.getAmount() / (expenseShareRepository.findCountOfOwer(expense.getId()) + 1);  // old ower plus one for payer
         List<ExpenseShare> shareList = expenseShareRepository.findExpenseShareById(expense.getId());
         for (ExpenseShare share : shareList) {
@@ -160,13 +166,14 @@ public class ExpenseServiceImpl implements ExpenseService {
         expenseDTO.setOwers(owerDTOS);
         expenseDTO.setDescription(expense.getDescription());
         expenseDTO.setAmount(expense.getAmount());
-        expenseDTO.setPayerName(expense.getPayer().getUsername());
+        expenseDTO.setPayerName(expense.getPayer().getName());
         expenseDTO.setPayerId(expense.getPayer().getId());
         expenseDTO.setDate(expense.getCreatedOn());
         return expenseDTO;
     }
 
     @Override
+    @Transactional
     @PreAuthorize("@authorizationService.isGroupOwner(#groupId)")
     public List<ExpenseDTO> findAllExpense(UUID groupId) {
         Group group = groupRepository.findById(groupId).orElseThrow(() -> new DataNotFoundException(ErrorMessages.GROUP_NOT_FOUND));
@@ -180,7 +187,7 @@ public class ExpenseServiceImpl implements ExpenseService {
             expenseDTO.setDescription(expense.getDescription());
             expenseDTO.setDate(expense.getCreatedOn());
             expenseDTO.setAmount(expense.getAmount());
-            expenseDTO.setPayerName(expense.getPayer().getUsername());
+            expenseDTO.setPayerName(expense.getPayer().getName());
             expenseDTO.setPayerId(expense.getPayer().getId());
             expenseDTOS.add(expenseDTO);
         }

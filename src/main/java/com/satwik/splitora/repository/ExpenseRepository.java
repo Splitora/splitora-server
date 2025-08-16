@@ -14,7 +14,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
     List<Expense> findByGroupId(UUID groupId);
 
     @Query("SELECT NEW com.satwik.splitora.settlement.model.Transaction("+
-            "es.user.id, " +
+            "es.groupMembers.id, " +
             "e.payer.id, " +
             "es.sharedAmount) " +
             "FROM Expense e " +
