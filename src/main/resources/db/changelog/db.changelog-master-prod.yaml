@@ -4,7 +4,7 @@ databaseChangeLog:
       context: prod
   - include:
       file: db/changelog/schema/unregistered-user-create.yaml
-      context: dev
+      context: prod
   - include:
       file: db/changelog/schema/group-create.yaml
       context: prod
