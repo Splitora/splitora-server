@@ -4,12 +4,15 @@ spring:
         url: jdbc:mysql://localhost:3306/Splitora
         username: root
         password: root
+        username: ${DB_USERNAME}
+        password: ${DB_PASSWORD}
         driver-class-name: com.mysql.cj.jdbc.Driver
 
     jpa:
         hibernate:
             ddl-auto: none
             naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
+        open-in-view: false
 
     liquibase:
         enabled: true
@@ -39,6 +42,9 @@ spring:
 server:
     port: 8081
 
+allowed:
+    origins: http://localhost:3000
+
 # JWT security
 jwt:
     access:
@@ -50,18 +56,4 @@ jwt:
 
 # File path for the report
 my:
-    reportFilePath: /home/ongraph/Downloads/
-
-app:
-    initial-users:
-        super-admin:
-            username: ${SUPERADMIN_USERNAME}
-            password: ${SUPERADMIN_PASSWORD}
-            email: ${SUPERADMIN_EMAIL}
-        regular-users:
-            - username: ${USER1_USERNAME}
-              password: ${USER1_PASSWORD}
-              email: ${USER1_EMAIL}
-            - username: ${USER2_USERNAME}
-              password: ${USER2_PASSWORD}
-              email: ${USER2_EMAIL}
+    reportFilePath: /path

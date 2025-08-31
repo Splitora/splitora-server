@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -17,6 +18,15 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorResponseModel> handleBadRequestException(RuntimeException ex) {
+        return buildBadRequestResponse(ex);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponseModel> handleInvalidArgumentException(RuntimeException ex) {
+        return buildBadRequestResponse(ex);
+    }
+
+    private ResponseEntity<ErrorResponseModel> buildBadRequestResponse(RuntimeException ex) {
         log.info("Runtime exception occurred: ", ex);
         ErrorResponseModel errorResponse = ResponseUtil.error(ex.getMessage(), HttpStatus.BAD_REQUEST, new ErrorDetails(
                 ErrorCode.INVALID_REQUEST.getCode(),

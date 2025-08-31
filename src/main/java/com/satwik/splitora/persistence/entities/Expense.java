@@ -17,9 +17,9 @@ public class Expense extends BaseEntity {
     @JoinColumn(name = "group_id")
     private Group group;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "payer_id")
-    private User payer;
+    private GroupMembers payer;
 
     @Column(name = "amount")
     private double amount;

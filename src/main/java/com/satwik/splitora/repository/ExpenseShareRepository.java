@@ -14,18 +14,18 @@ import java.util.UUID;
 @Repository
 public interface ExpenseShareRepository extends JpaRepository<ExpenseShare, UUID> {
 
-    @Query("SELECT NEW com.satwik.splitora.persistence.dto.user.OwerDTO(u.id, u.username, es.sharedAmount) " +
+    @Query("SELECT NEW com.satwik.splitora.persistence.dto.user.OwerDTO(gm.id, es.sharedAmount) " +
             "FROM ExpenseShare es " +
-            "INNER JOIN es.user u " +
+            "INNER JOIN es.groupMembers gm " +
             "WHERE es.expense.id = ?1")
     List<OwerDTO> findOwersWithAmountByExpenseId(UUID expenseId);
 
     @Query(value = "SELECT COUNT(*) FROM ExpenseShare es WHERE es.expense.id = ?1")
     int findCountOfOwer(UUID expenseId);
 
-    @Query("SELECT u.username " +
+    @Query("SELECT gm.id " +
             "FROM ExpenseShare es " +
-            "INNER JOIN es.user u " +
+            "INNER JOIN es.groupMembers gm " +
             "WHERE es.expense.id = ?1")
     List<String> findPayersById(UUID expenseId);
 
@@ -35,9 +35,9 @@ public interface ExpenseShareRepository extends JpaRepository<ExpenseShare, UUID
     @Modifying
     @Transactional
     @Query("DELETE FROM ExpenseShare es " +
-            "WHERE es.expense.id = ?1 AND es.user.id = ?2")
-    void deleteByExpenseIdAndUserId(UUID expenseId, UUID owerId);
+            "WHERE es.expense.id = ?1 AND es.groupMembers.id = ?2")
+    void deleteByExpenseIdAndMemberId(UUID expenseId, UUID owerId);
 
-    @Query(value = "SELECT COUNT(*) > 0 FROM ExpenseShare es WHERE es.expense.id = ?1 AND es.user.id = ?2")
-    boolean existsByExpenseIdAndUserId(UUID expenseId, UUID owerId);
+    @Query(value = "SELECT COUNT(*) > 0 FROM ExpenseShare es WHERE es.expense.id = ?1 AND es.groupMembers.id = ?2")
+    boolean existsByExpenseIdAndMemberId(UUID expenseId, UUID owerId);
 }

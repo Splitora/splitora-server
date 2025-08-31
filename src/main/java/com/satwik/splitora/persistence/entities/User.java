@@ -41,14 +41,8 @@ public class User extends BaseEntity {
     @Column(name = "user_role", nullable = false, length = 20)
     private UserRole userRole;
 
-    @OneToMany(mappedBy = "payer", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Expense> expenseList;
-
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Group> groupList;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private List<ExpenseShare> userInvolvedInExpenses;
 
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupMembers> groupMembers = new ArrayList<>();

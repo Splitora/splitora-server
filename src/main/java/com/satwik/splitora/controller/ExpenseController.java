@@ -2,10 +2,11 @@ package com.satwik.splitora.controller;
 
 import com.satwik.splitora.persistence.dto.ResponseModel;
 import com.satwik.splitora.persistence.dto.expense.ExpenseDTO;
+import com.satwik.splitora.persistence.dto.expense.ExpenseMembersRequest;
 import com.satwik.splitora.service.interfaces.ExpenseService;
 import com.satwik.splitora.util.ResponseUtil;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +19,11 @@ import java.util.UUID;
 @RequestMapping("/api/v1/expense")
 public class ExpenseController {
 
-    @Autowired
-    ExpenseService expenseService;
+    private final ExpenseService expenseService;
+
+    public ExpenseController (ExpenseService expenseService) {
+        this.expenseService = expenseService;
+    }
 
     /**
      * Creates a new expense which is not grouped.
@@ -86,15 +90,15 @@ public class ExpenseController {
      * to an expense identified by the given expense ID. It logs the incoming request and
      * the resulting response.
      *
-     * @param owerId the UUID of the ower to be added to the expense.
+     * @param expenseMembersRequest the request body containing the ower details to be added.
      * @param expenseId the UUID of the expense to which the ower will be added.
      * @return a ResponseEntity containing a string response message indicating the
      *         result of the operation.
      */
     @PostMapping("/add-ower/{expenseId}")
-    public ResponseEntity<ResponseModel<String>> addOwerToExpense(@RequestParam UUID owerId, @PathVariable UUID expenseId) {
-        log.info("Post Endpoint: add ower with owerId: {}, to an expense with expenseId: {}", owerId, expenseId);
-        String response = expenseService.addUserToExpense(expenseId, owerId);
+    public ResponseEntity<ResponseModel<String>> addOwerToExpense(@Valid @RequestBody ExpenseMembersRequest expenseMembersRequest, @PathVariable UUID expenseId) {
+        log.info("Post Endpoint: add owers to an expense with expenseId: {}", expenseId);
+        String response = expenseService.addOwersToExpense(expenseId, expenseMembersRequest);
         ResponseModel<String> responseModel = ResponseUtil.success(response, HttpStatus.OK, "Ower added to expense successfully");
         log.info("Post Endpoint: add ower to expense with response: {}", responseModel);
         return ResponseEntity.status(HttpStatus.OK).body(responseModel);

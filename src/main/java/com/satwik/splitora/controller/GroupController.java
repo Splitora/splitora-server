@@ -1,16 +1,12 @@
 package com.satwik.splitora.controller;
 
-import com.satwik.splitora.configuration.security.LoggedInUser;
 import com.satwik.splitora.persistence.dto.ResponseModel;
-import com.satwik.splitora.persistence.dto.group.GroupDTO;
-import com.satwik.splitora.persistence.dto.group.GroupListDTO;
-import com.satwik.splitora.persistence.dto.group.GroupUpdateRequest;
+import com.satwik.splitora.persistence.dto.group.*;
 import com.satwik.splitora.persistence.dto.user.UserDTO;
 import com.satwik.splitora.service.interfaces.GroupService;
 import com.satwik.splitora.util.ResponseUtil;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,11 +19,11 @@ import java.util.UUID;
 @RequestMapping("/api/v1/group")
 public class GroupController {
 
-    @Autowired
-    GroupService groupService;
+    private final GroupService groupService;
 
-    @Autowired
-    LoggedInUser loggedInUser;
+    public GroupController (GroupService groupService) {
+        this.groupService = groupService;
+    }
 
     /**
      * Creates a group for a user.
@@ -130,14 +126,14 @@ public class GroupController {
      * the resulting response.
      *
      * @param groupId the UUID of the group to which the member will be added.
-     * @param memberId the UUID of the member to be added to the group.
+     * @param addMemberRequest the data transfer object containing the details of the member to be added.
      * @return a ResponseEntity containing a string response message indicating the
      *         result of the member addition process.
      */
     @PostMapping("/add-member/{groupId}")
-    public ResponseEntity<ResponseModel<String>> addGroupMembers(@PathVariable UUID groupId, @RequestParam UUID memberId) {
-        log.info("Post Endpoint: add member with memberId: {} to the group with groupId: {}", memberId, groupId);
-        String response = groupService.addGroupMembers(groupId, memberId);
+    public ResponseEntity<ResponseModel<String>> addGroupMembers(@PathVariable UUID groupId, @RequestBody GroupMemberDTO addMemberRequest) {
+        log.info("Post Endpoint: add member with groupId: {}", groupId);
+        String response = groupService.addGroupMembers(groupId, addMemberRequest);
         ResponseModel<String> responseModel = ResponseUtil.success(response, HttpStatus.OK, "Member added to group successfully");
         log.info("Post Endpoint: add member with response: {}", responseModel);
         return ResponseEntity.status(HttpStatus.OK).body(responseModel);
@@ -179,6 +175,24 @@ public class GroupController {
         String response = groupService.deleteMembers(groupId, groupMemberId);
         ResponseModel<String> responseModel = ResponseUtil.success(response, HttpStatus.OK, "Member removed from group successfully");
         log.info("Delete Endpoint: delete a member with response: {}", responseModel);
+        return ResponseEntity.status(HttpStatus.OK).body(responseModel);
+    }
+
+    /**
+     * Retrieves balance transactions for a group.
+     *
+     * This endpoint processes the request to get balance transactions for a group identified by the given group ID.
+     * It logs the incoming request and the resulting response.
+     *
+     * @param groupId the UUID of the group for which balance transactions are to be retrieved.
+     * @return a ResponseEntity containing a BalanceTransaction object with the group's balance transactions.
+     */
+    @GetMapping("/getBalanceTransactions/{groupId}")
+    public ResponseEntity<ResponseModel<BalanceTransaction>> getBalanceTransactions(@PathVariable UUID groupId) {
+        log.info("Get Endpoint: get balance transactions for group with id: {}", groupId);
+        BalanceTransaction transactions = groupService.getBalanceTransactions(groupId);
+        ResponseModel<BalanceTransaction> responseModel = ResponseUtil.success(transactions, HttpStatus.OK, "Balance transactions retrieved successfully");
+        log.info("Get Endpoint: get balance transactions response: {}", responseModel);
         return ResponseEntity.status(HttpStatus.OK).body(responseModel);
     }
 }

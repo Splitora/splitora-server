@@ -26,11 +26,22 @@ databaseChangeLog:
                   type: TIMESTAMP
                   defaultValueComputed: CURRENT_TIMESTAMP
               - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
                   name: group_id
                   type: BINARY(16)
                   constraints:
                     foreignKeyName: fk_groupmembers_group
                     references: group_table(id)
+              - column:
+                  name: unregistered_member_id
+                  type: BINARY(16)
+                  constraints:
+                    foreignKeyName: fk_groupmembers_unregistereduser
+                    references: unregistered_user(id)
               - column:
                   name: member_id
                   type: BINARY(16)
