@@ -12,6 +12,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -22,11 +25,27 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponseModel> handleInvalidArgumentException(RuntimeException ex) {
-        return buildBadRequestResponse(ex);
+    public ResponseEntity<ErrorResponseModel> handleInvalidArgumentException(MethodArgumentNotValidException ex) {
+        return handleValidationExceptions(ex);
     }
 
-    private ResponseEntity<ErrorResponseModel> buildBadRequestResponse(RuntimeException ex) {
+    private ResponseEntity<ErrorResponseModel> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        log.info("Validation exception occurred: ", ex);
+        String errorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
+
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage()));
+
+        ErrorResponseModel errorResponse = ResponseUtil.error("Invalid fields value!", HttpStatus.BAD_REQUEST, new ErrorDetails(
+                ErrorCode.INVALID_REQUEST.getCode(),
+                ErrorCode.INVALID_REQUEST.getMessage()
+        ), errors);
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    private ResponseEntity<ErrorResponseModel> buildBadRequestResponse(Exception ex) {
         log.info("Runtime exception occurred: ", ex);
         ErrorResponseModel errorResponse = ResponseUtil.error(ex.getMessage(), HttpStatus.BAD_REQUEST, new ErrorDetails(
                 ErrorCode.INVALID_REQUEST.getCode(),

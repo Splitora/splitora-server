@@ -6,6 +6,7 @@ import com.satwik.splitora.persistence.dto.ResponseModel;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 public final class ResponseUtil {
 
@@ -26,6 +27,16 @@ public final class ResponseUtil {
                 .message(message)
                 .timestamp(LocalDateTime.now())
                 .error(errorDetails)
+                .build();
+    }
+
+    public static ErrorResponseModel error(String message, HttpStatus status, ErrorDetails errorDetails,  Map<String, String> fieldErrors) {
+        return ErrorResponseModel.builder()
+                .status(status.name())
+                .message(message)
+                .timestamp(LocalDateTime.now())
+                .error(errorDetails)
+                .fieldErrors(fieldErrors)
                 .build();
     }
 }
