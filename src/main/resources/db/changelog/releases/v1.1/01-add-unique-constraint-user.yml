@@ -1,0 +1,39 @@
+databaseChangeLog:
+    - changeSet:
+        id: add-unique-constraints-to-user-cred
+        author: splitora
+        preConditions:
+            onFail: MARK_RAN
+            and:
+            - not:
+                uniqueConstraintExists:
+                    tableName: user
+                    constraintName: uq_user_email
+            - not:
+                uniqueConstraintExists:
+                    tableName: user
+                    constraintName: uq_user_username
+        changes:
+            - addUniqueConstraint:
+                tableName: user
+                columnNames: email
+                constraintName: uq_user_email
+            - addUniqueConstraint:
+                tableName: user
+                columnNames: username
+                constraintName: uq_user_username
+            - addUniqueConstraint:
+                tableName: user
+                columnNames: phone_country_code, phone_number
+                constraintName: uq_user_country_code_phone_number
+
+        rollback:
+            - dropUniqueConstraint:
+                tableName: user
+                constraintName: uq_user_email
+            - dropUniqueConstraint:
+                tableName: user
+                constraintName: uq_user_username
+            - dropUniqueConstraint:
+                tableName: user
+                constraintName: uq_user_country_code_phone_number

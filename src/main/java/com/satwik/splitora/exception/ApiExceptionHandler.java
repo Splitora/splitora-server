@@ -5,6 +5,7 @@ import com.satwik.splitora.persistence.dto.ErrorDetails;
 import com.satwik.splitora.persistence.dto.ErrorResponseModel;
 import com.satwik.splitora.util.ResponseUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -29,9 +30,28 @@ public class ApiExceptionHandler {
         return handleValidationExceptions(ex);
     }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponseModel> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        log.error("Data integrity violation exception occurred: ", ex);
+        String message = ex.getMessage();
+        if(message.contains("uq_user_email")) {
+            message = "Email already exists";
+        } else if(message.contains("uq_user_username")) {
+            message = "Username already exists";
+        } else {
+            message = "Data integrity violation";
+        }
+
+        ErrorResponseModel errorResponse = ResponseUtil.error(message, HttpStatus.BAD_REQUEST, new ErrorDetails(
+                ErrorCode.INVALID_REQUEST.getCode(),
+                ErrorCode.INVALID_REQUEST.getMessage()
+        ));
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
     private ResponseEntity<ErrorResponseModel> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        log.info("Validation exception occurred: ", ex);
-        String errorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
+        log.error("Validation exception occurred: ", ex);
 
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error ->
@@ -46,7 +66,7 @@ public class ApiExceptionHandler {
     }
 
     private ResponseEntity<ErrorResponseModel> buildBadRequestResponse(Exception ex) {
-        log.info("Runtime exception occurred: ", ex);
+        log.error("Runtime exception occurred: ", ex);
         ErrorResponseModel errorResponse = ResponseUtil.error(ex.getMessage(), HttpStatus.BAD_REQUEST, new ErrorDetails(
                 ErrorCode.INVALID_REQUEST.getCode(),
                 ErrorCode.INVALID_REQUEST.getMessage()
@@ -56,7 +76,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(RefreshTokenInvalidException.class)
     public ResponseEntity<ErrorResponseModel> handleRefreshTokenInvalidException(RefreshTokenInvalidException ex) {
-        log.info("RefreshTokenInvalidException occurred: ", ex);
+        log.error("RefreshTokenInvalidException occurred: ", ex);
         ErrorResponseModel errorResponse = ResponseUtil.error("Refresh Token Invalid", HttpStatus.UNAUTHORIZED, new ErrorDetails(
                 ErrorCode.REFRESH_TOKEN_INVALID.getCode(),
                 ErrorCode.REFRESH_TOKEN_INVALID.getMessage()
@@ -67,7 +87,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(DataNotFoundException.class)
     public ResponseEntity<ErrorResponseModel> handleDataNotFoundException(DataNotFoundException ex) {
-        log.info("DataNotFoundException occurred: ", ex);
+        log.error("DataNotFoundException occurred: ", ex);
         ErrorResponseModel errorResponse = ResponseUtil.error(ex.getMessage(), HttpStatus.NOT_FOUND, new ErrorDetails(
                 ErrorCode.ENTITY_NOT_FOUND.getCode(),
                 ErrorCode.ENTITY_NOT_FOUND.getMessage()
@@ -78,7 +98,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(FailedToSaveException.class)
     public ResponseEntity<ErrorResponseModel> handleFailedToSaveException(FailedToSaveException ex) {
-        log.info("FailedToSaveException occurred: ", ex);
+        log.error("FailedToSaveException occurred: ", ex);
         ErrorResponseModel errorResponse = ResponseUtil.error("Failed to Save", HttpStatus.BAD_REQUEST, new ErrorDetails(
                 ErrorCode.ENTITY_NOT_FOUND.getCode(),
                 ErrorCode.ENTITY_NOT_FOUND.getMessage()
@@ -89,7 +109,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponseModel> handleAccessDeniedException(AccessDeniedException ex) {
-        log.info("AccessDeniedException occurred: ", ex);
+        log.error("AccessDeniedException occurred: ", ex);
         ErrorResponseModel errorResponse = ResponseUtil.error("Access Denied", HttpStatus.FORBIDDEN, new ErrorDetails(
                 ErrorCode.ACCESS_DENIED.getCode(),
                 ErrorCode.ACCESS_DENIED.getMessage()
