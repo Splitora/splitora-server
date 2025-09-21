@@ -3,6 +3,9 @@ databaseChangeLog:
       file: db/changelog/schema/user-create.yaml
       context: prod
   - include:
+      file: db/changelog/releases/v1.1/01-add-unique-constraint-user.yml
+      context: prod
+  - include:
       file: db/changelog/schema/unregistered-user-create.yaml
       context: prod
   - include:
