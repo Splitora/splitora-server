@@ -2,6 +2,7 @@ package com.satwik.splitora.service.implementations;
 
 import com.satwik.splitora.constants.enums.RegistrationMethod;
 import com.satwik.splitora.constants.enums.UserRole;
+import com.satwik.splitora.exception.BadRequestException;
 import com.satwik.splitora.persistence.dto.user.PhoneDTO;
 import com.satwik.splitora.persistence.dto.user.RegisterUserRequest;
 import com.satwik.splitora.persistence.dto.user.UserDTO;
@@ -37,6 +38,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public String saveUser(RegisterUserRequest request) {
+
+        validateUserData(request);
+
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
@@ -52,6 +56,18 @@ public class UserServiceImpl implements UserService {
         group.setDefaultGroup(true);
         groupRepository.save(group);
         return user.getId().toString();
+    }
+
+    private void validateUserData(RegisterUserRequest request) {
+        if(userRepository.existsByEmail(request.getEmail())) {
+            throw new BadRequestException("User with this email already exists");
+        }
+        if(userRepository.existsByUsername(request.getUsername())) {
+            throw new BadRequestException("Username already in use");
+        }
+        if(userRepository.existsByCountryCodeAndPhoneNumber(request.getPhone().getCountryCode(), request.getPhone().getPhoneNumber())) {
+            throw new BadRequestException("Phone number already in use");
+        }
     }
 
     @Override
