@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-userevent-table
+      author: splitora
+      changes:
+        - createTable:
+            tableName: user_events
+            columns:
+              - column:
+                  name: id
+                  type: BINARY(16)
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created_by
+                  type: BINARY(16)
+              - column:
+                  name: created_on
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: modified_by
+                  type: BINARY(16)
+              - column:
+                  name: modified_on
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: welcome_email_sent
+                  type: BIT
+                  defaultValue: false
+              - column:
+                  name: email_verified
+                  type: BIT
+                  defaultValue: false
+              - column:
+                  name: phone_number_verified
+                  type: BIT
+                  defaultValue: false

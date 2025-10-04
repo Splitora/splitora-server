@@ -1,0 +1,21 @@
+databaseChangeLog:
+    - changeSet:
+        id: add-user-events
+        author: splitora
+        changes:
+            - addColumn:
+                tableName: user
+                columns:
+                  - column:
+                      name: user_events_id
+                      type: BINARY(16)
+                      constraints:
+                        nullable: true # Will be set to NOT NULL in a future migration after backfilling data
+
+            - addForeignKeyConstraint:
+                baseTableName: user
+                baseColumnNames: user_events_id
+                referencedTableName: user_events
+                referencedColumnNames: id
+                constraintName: fk_user_userevents
+                onDelete: CASCADE

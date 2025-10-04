@@ -8,6 +8,7 @@ import com.satwik.splitora.persistence.entities.Group;
 import com.satwik.splitora.persistence.entities.User;
 import com.satwik.splitora.repository.GroupRepository;
 import com.satwik.splitora.repository.UserRepository;
+import com.satwik.splitora.service.implementations.NotificationService;
 import com.satwik.splitora.service.implementations.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,9 @@ class UserServiceTest {
 
     @Mock
     private GroupRepository groupRepository;
+
+    @Mock
+    private NotificationService notificationService;
 
     @Mock
     private BCryptPasswordEncoder passwordEncoder;

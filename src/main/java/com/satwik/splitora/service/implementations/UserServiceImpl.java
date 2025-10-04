@@ -8,18 +8,23 @@ import com.satwik.splitora.persistence.dto.user.RegisterUserRequest;
 import com.satwik.splitora.persistence.dto.user.UserDTO;
 import com.satwik.splitora.persistence.entities.Group;
 import com.satwik.splitora.persistence.entities.User;
+import com.satwik.splitora.persistence.entities.UserEvents;
 import com.satwik.splitora.repository.GroupRepository;
 import com.satwik.splitora.repository.UserRepository;
 import com.satwik.splitora.service.interfaces.UserService;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class UserServiceImpl implements UserService {
 
     private final AuthorizationService authorizationService;
+
+    private final NotificationService notificationService;
 
     private final UserRepository userRepository;
 
@@ -27,8 +32,9 @@ public class UserServiceImpl implements UserService {
 
     private final BCryptPasswordEncoder pwdEncoder;
 
-    public UserServiceImpl(AuthorizationService authorizationService, UserRepository userRepository, GroupRepository groupRepository, BCryptPasswordEncoder pwdEncoder) {
+    public UserServiceImpl(AuthorizationService authorizationService, NotificationService notificationService, UserRepository userRepository, GroupRepository groupRepository, BCryptPasswordEncoder pwdEncoder) {
         this.authorizationService = authorizationService;
+        this.notificationService = notificationService;
         this.userRepository = userRepository;
         this.groupRepository = groupRepository;
         this.pwdEncoder = pwdEncoder;
@@ -49,12 +55,23 @@ public class UserServiceImpl implements UserService {
         user.setPhoneNumber(request.getPhone().getPhoneNumber());
         user.setPassword(pwdEncoder.encode(request.getPassword()));
         user.setRegistrationMethod(RegistrationMethod.NORMAL);
+
+        // create user events
+        createUserEvents(user);
+
         user = userRepository.save(user);
+
+        // create default group
         Group group = new Group();
         group.setGroupName("Non Grouped Expenses");
         group.setUser(user);
         group.setDefaultGroup(true);
         groupRepository.save(group);
+
+        // Send welcome email
+        notificationService.sendWelcomeEmail(user);
+
+        // return user id
         return user.getId().toString();
     }
 
@@ -68,6 +85,15 @@ public class UserServiceImpl implements UserService {
         if(userRepository.existsByCountryCodeAndPhoneNumber(request.getPhone().getCountryCode(), request.getPhone().getPhoneNumber())) {
             throw new BadRequestException("Phone number already in use");
         }
+    }
+
+    // create user events
+    private void createUserEvents(User user) {
+        UserEvents userEvents = new UserEvents();
+        userEvents.setWelcomeEmailSent(false);
+        userEvents.setEmailVerified(false);
+        userEvents.setPhoneNumberVerified(false);
+        user.setUserEvents(userEvents);
     }
 
     @Override
