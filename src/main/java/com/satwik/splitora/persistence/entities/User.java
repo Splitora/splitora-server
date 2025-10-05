@@ -47,4 +47,7 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupMembers> groupMembers = new ArrayList<>();
 
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_events_id", referencedColumnName = "id")
+    private UserEvents userEvents;
 }
