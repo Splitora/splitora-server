@@ -39,10 +39,15 @@ class NotificationServiceTest {
         notificationService = new NotificationService(mailSender, templateEngine, userEventsRepository);
         // manually inject value since @Value doesn’t work in plain unit test
         var fromEmailField = "fromEmail";
+        var mailEnabledField = "mailEnabled";
         try {
             var field = NotificationService.class.getDeclaredField(fromEmailField);
             field.setAccessible(true);
             field.set(notificationService, "noreply@splitora.com");
+
+            var field2 = NotificationService.class.getDeclaredField(mailEnabledField);
+            field2.setAccessible(true);
+            field2.set(notificationService, true);
         } catch (Exception ignored) {
             // ignoring exception as this is just for test setup
         }
@@ -139,5 +144,28 @@ class NotificationServiceTest {
         // Assert
         verify(userEventsRepository, atLeast(2)).save(userEvents); // one before, one after failure
         verify(mailSender).send(mimeMessage);
+    }
+
+    @Test
+    void testSendWelcomeEmail_whenMailDisabled_shouldSkip() throws Exception {
+        // Arrange
+        UserEvents userEvents = new UserEvents();
+        userEvents.setWelcomeEmailSent(false);
+
+        User user = new User();
+        user.setEmail("disabled@example.com");
+        user.setUserEvents(userEvents);
+
+        // Disable mail
+        var mailEnabledField = NotificationService.class.getDeclaredField("mailEnabled");
+        mailEnabledField.setAccessible(true);
+        mailEnabledField.set(notificationService, false);
+
+        // Act
+        notificationService.sendWelcomeEmail(user);
+
+        // Assert
+        verifyNoInteractions(mailSender, templateEngine);
+        verify(userEventsRepository, never()).save(any());
     }
 }

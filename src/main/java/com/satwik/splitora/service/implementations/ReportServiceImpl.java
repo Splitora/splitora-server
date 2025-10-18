@@ -55,7 +55,7 @@ public class ReportServiceImpl implements ReportService {
 
         for (TempReport tempReport : tempReportList) {
             ReportDTO reportDTO = new ReportDTO();
-            reportDTO.setExpenseOwner(tempReport.getExpenseOwner());
+            reportDTO.setExpenseOwner(String.valueOf(tempReport.getExpenseOwner()));
             reportDTO.setExpenseName(tempReport.getExpenseName());
             reportDTO.setGroupName(tempReport.getGroupName());
             reportDTO.setTotalExpenseAmount(tempReport.getTotalExpenseAmount());
@@ -94,7 +94,7 @@ public class ReportServiceImpl implements ReportService {
 
         for (TempReport tempReport : tempReportList) {
             ReportDTO reportDTO = new ReportDTO();
-            reportDTO.setExpenseOwner(tempReport.getExpenseOwner());
+            reportDTO.setExpenseOwner(String.valueOf(tempReport.getExpenseOwner()));
             reportDTO.setExpenseName(tempReport.getExpenseName());
             reportDTO.setGroupName(tempReport.getGroupName());
             reportDTO.setTotalExpenseAmount(tempReport.getTotalExpenseAmount());
@@ -128,7 +128,7 @@ public class ReportServiceImpl implements ReportService {
 
         for (TempReport tempReport : tempReportList) {
             ReportDTO reportDTO = new ReportDTO();
-            reportDTO.setExpenseOwner(tempReport.getExpenseOwner());
+            reportDTO.setExpenseOwner(String.valueOf(tempReport.getExpenseOwner()));
             reportDTO.setExpenseName(tempReport.getExpenseName());
             reportDTO.setGroupName(tempReport.getGroupName());
             reportDTO.setTotalExpenseAmount(tempReport.getTotalExpenseAmount());

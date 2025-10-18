@@ -24,6 +24,9 @@ public class NotificationService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    @Value("${spring.mail.enabled}")
+    private boolean mailEnabled;
+
     public NotificationService(JavaMailSender mailSender, TemplateEngine templateEngine, UserEventsRepository userEventsRepository) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
@@ -32,6 +35,11 @@ public class NotificationService {
 
     @Async
     public void sendWelcomeEmail(User user) {
+        if (!mailEnabled) {
+            log.info("Mail sending is disabled. Skipping welcome email for user: {}", user.getEmail());
+            return;
+        }
+
         String email = user.getEmail();
         if (email == null || email.isEmpty()) {
             log.warn("User {} does not have a valid email address. Skipping welcome email.", user.getUsername());

@@ -35,7 +35,7 @@ public class JwtUtil {
         return buildToken(user, ACCESS_SECRET_KEY, ACCESS_TOKEN_EXP_TIME);
     }
 
-    public String buildToken(User user, String secretKey, Long expirationTime) {
+    private String buildToken(User user, String secretKey, Long expirationTime) {
         try {
             Date issuedAt = new Date(System.currentTimeMillis());
             Map<String, Object> extraClaims = new HashMap<>();

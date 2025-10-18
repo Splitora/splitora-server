@@ -1,0 +1,56 @@
+spring:
+    config:
+        activate:
+            on-profile: prod
+    jpa:
+        hibernate:
+            ddl-auto: none
+        open-in-view: false
+
+    liquibase:
+        enabled: true
+        change-log: classpath:db/changelog/db.changelog-master-prod.yaml
+        contexts: prod
+
+    mail:
+        enabled: true
+
+    security:
+        oauth2:
+            client:
+                registration:
+                    google:
+                        client-id: ${GOOGLE_CLIENT_ID}
+                        client-secret: ${GOOGLE_CLIENT_SECRET}
+                        redirect-uri: ${GOOGLE_REDIRECT_URI}
+                provider:
+                    google:
+                        authorization-uri: https://accounts.google.com/o/oauth2/auth
+                        token-uri: https://oauth2.googleapis.com/token
+                        user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+                        user-name-attribute: name
+
+springdoc:
+    api-docs:
+        enabled: false
+    swagger-ui:
+        enabled: false
+
+server:
+    port: ${SERVER_PORT:8081}
+
+allowed:
+    origins: ${ALLOWED_ORIGINS}
+
+# JWT security
+jwt:
+    access:
+        secretKey: ${JWT_ACCESS_SECRET}
+        expirationTimeInMinutes: ${JWT_ACCESS_EXPIRATION}
+    refresh:
+        secretKey: ${JWT_REFRESH_SECRET}
+        expirationTimeInMinutes: ${JWT_REFRESH_EXPIRATION}
+
+# File path for the report
+my:
+    reportFilePath: ${REPORT_FILE_PATH}

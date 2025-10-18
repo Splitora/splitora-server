@@ -7,16 +7,12 @@ WORKDIR /app
 # Copy the jar file into the container at /app
 COPY target/*.jar app.jar
 
-# Accept build-time arguments for Liquibase context and changelog
-ARG SPRING_LIQUIBASE_CONTEXTS
-ARG SPRING_LIQUIBASE_CHANGELOG
-
-# Set them as environment variables so Spring Boot can access them
-ENV SPRING_LIQUIBASE_CONTEXTS=${SPRING_LIQUIBASE_CONTEXTS}
-ENV SPRING_LIQUIBASE_CHANGELOG=${SPRING_LIQUIBASE_CHANGELOG}
+# Accept build-time arguments for spring profile
+ARG SPRING_PROFILES_ACTIVE
+ENV SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
 
 # Expose the port the app runs in
 EXPOSE 8081
 
 # Run the jar file
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=${SPRING_PROFILES_ACTIVE}"]
