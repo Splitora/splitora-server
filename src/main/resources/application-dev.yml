@@ -1,0 +1,32 @@
+spring:
+    config:
+        activate:
+            on-profile: dev
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        open-in-view: false
+
+    liquibase:
+        enabled: true
+        change-log: classpath:db/changelog/db.changelog-master-dev.yaml
+        contexts: dev
+
+    mail:
+        enabled: true
+
+server:
+    port: 8081
+
+# JWT security
+jwt:
+    access:
+        secretKey: SuP9ErKeY
+        expirationTimeInMinutes: 2
+    refresh:
+        secretKey: wUP89ErKie
+        expirationTimeInMinutes: 60
+
+# File path for the report
+my:
+    reportFilePath: /path

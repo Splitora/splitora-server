@@ -17,7 +17,7 @@ public class TempReport {
 
     String expenseName;
 
-    String expenseOwner;
+    UUID expenseOwner;
 
     double totalExpenseAmount;
 

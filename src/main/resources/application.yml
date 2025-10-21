@@ -1,24 +1,18 @@
-# Connection of spring application with database
 spring:
+    # Connection of spring application with database
     datasource:
-        url: jdbc:mysql://localhost:3306/Splitora
+        url: ${DB_URL}
         username: ${DB_USERNAME}
         password: ${DB_PASSWORD}
         driver-class-name: com.mysql.cj.jdbc.Driver
 
     jpa:
         hibernate:
-            ddl-auto: none
             naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
         open-in-view: false
 
-    liquibase:
-        enabled: true
-        change-log: classpath:db/changelog/db.changelog-master-dev.yaml
-        contexts: ${SPRING_LIQUIBASE_CONTEXTS:dev}
-        # show-sql: true  # Uncomment to enable SQL logging
-
     mail:
+        enabled: false
         host: smtp.gmail.com
         port: 587
         username: ${MAIL_USERNAME}
@@ -35,13 +29,13 @@ spring:
             client:
                 registration:
                     google:
-                        client-id: abc123
-                        client-secret: good123
+                        client-id: ${GOOGLE_CLIENT_ID:abc123}
+                        client-secret: ${GOOGLE_CLIENT_SECRET:good123}
                         scope:
                             - openid
                             - email
                             - profile
-                        redirect-uri: http://localhost:3000/callback
+                        redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:3000/callback}
                 provider:
                     google:
                         authorization-uri: https://accounts.google.com/o/oauth2/auth
@@ -53,17 +47,17 @@ server:
     port: 8081
 
 allowed:
-    origins: http://localhost:3000
+    origins: ${ALLOWED_ORIGINS:http://localhost:3000}
 
 # JWT security
 jwt:
     access:
-        secretKey: SuP9ErKeY
-        expirationTimeInMinutes: 150
+        secretKey: ${JWT_ACCESS_SECRET:SuP9ErKeY}
+        expirationTimeInMinutes: ${JWT_ACCESS_EXPIRATION:150}
     refresh:
-        secretKey: wUP89ErKie
-        expirationTimeInMinutes: 2000
+        secretKey: ${JWT_REFRESH_SECRET:wUP89ErKie}
+        expirationTimeInMinutes: ${JWT_REFRESH_EXPIRATION:2000}
 
 # File path for the report
 my:
-    reportFilePath: /path
+    reportFilePath: ${REPORT_FILE_PATH:/path}
