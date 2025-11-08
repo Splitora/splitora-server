@@ -1,0 +1,85 @@
+prometheus.scrape "scrape_metrics" {
+    targets         = [
+    {"__address__" = "app:8081", "instance" = "one"},
+                        ]
+    forward_to      = [prometheus.relabel.filter_metrics.receiver]
+    metrics_path    = "/actuator/prometheus"
+    scrape_interval = "5s"
+    scrape_timeout = "3s"
+}
+
+prometheus.relabel "filter_metrics" {
+    rule {
+        action        = "drop"
+        source_labels = ["env"]
+        regex         = "dev"
+    }
+
+    forward_to = [prometheus.remote_write.metrics_service.receiver]
+}
+
+
+prometheus.remote_write "metrics_service" {
+
+    endpoint {
+        url = env("GRAFANA_PROMETHEUS_URL")
+
+        basic_auth {
+            username = env("GRAFANA_PROMETHEUS_USERNAME")
+            password = env("GRAFANA_PROMETHEUS_PASSWORD")
+        }
+    }
+}
+
+local.file_match "local_files" {
+    path_targets = [{"__path__" = "/var/logs/*.log"}]
+    sync_period = "5s"
+}
+
+loki.source.file "log_scrape" {
+    targets    = local.file_match.local_files.targets
+    forward_to = [loki.process.filter_logs.receiver]
+    tail_from_end = true
+}
+
+loki.process "filter_logs" {
+    stage.drop {
+        source = ""
+        expression  = ".*Connection closed by authenticating user root"
+        drop_counter_reason = "noisy"
+    }
+
+    stage.regex {
+        expression = "^(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) (?P<level>[A-Z]+)\\s+\\[(?P<thread>[^\\]]+)\\]\\s+(?P<class>[^\\s]+) - (?P<message>.*)$"
+    }
+
+    stage.labels {
+        values = {
+            timestamp = "timestamp",
+            level = "level",
+            thread = "thread",
+            class = "class",
+            message = "message",
+        }
+    }
+
+    stage.static_labels {
+        values = {
+          service_name = "splitora_app",
+        }
+    }
+
+    forward_to = [loki.write.grafana_loki.receiver]
+}
+
+loki.write "grafana_loki" {
+
+    endpoint {
+        url = env("GRAFANA_LOKI_URL")
+
+        basic_auth {
+            username = env("GRAFANA_LOKI_USERNAME")
+            password = env("GRAFANA_LOKI_PASSWORD")
+        }
+    }
+}

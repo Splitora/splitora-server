@@ -1,5 +1,8 @@
 spring:
     # Connection of spring application with database
+    application:
+        name: splitora
+
     datasource:
         url: ${DB_URL}
         username: ${DB_USERNAME}
@@ -10,6 +13,11 @@ spring:
         hibernate:
             naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
         open-in-view: false
+
+    logging:
+        config: classpath:logback-spring.xml
+        file:
+            name: /var/logs/app.log
 
     mail:
         enabled: false
@@ -57,6 +65,20 @@ jwt:
     refresh:
         secretKey: ${JWT_REFRESH_SECRET:wUP89ErKie}
         expirationTimeInMinutes: ${JWT_REFRESH_EXPIRATION:2000}
+
+# monitoring
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health, info, prometheus, metrics
+    endpoint:
+        health:
+            show-details: always
+        prometheus:
+            enabled: true
+        tags:
+            application: splitora
 
 # File path for the report
 my:

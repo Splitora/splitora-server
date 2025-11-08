@@ -1,0 +1,43 @@
+services:
+  app:
+    image: splitora-app
+    container_name: splitora_app
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+    environment :
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/Splitora2
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+    volumes:
+      - app-logs:/var/logs
+    networks:
+      - splitora-infra-network
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    ports:
+      - "12345:12345"
+    volumes:
+      - ./infra/alloy/config.alloy:/etc/alloy/config.alloy
+      - app-logs:/var/logs
+    command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
+    environment:
+      - GRAFANA_LOKI_URL=${GRAFANA_LOKI_URL}
+      - GRAFANA_LOKI_USERNAME=${GRAFANA_LOKI_USERNAME}
+      - GRAFANA_LOKI_PASSWORD=${GRAFANA_LOKI_PASSWORD}
+      - GRAFANA_PROMETHEUS_URL=${GRAFANA_PROMETHEUS_URL}
+      - GRAFANA_PROMETHEUS_USERNAME=${GRAFANA_PROMETHEUS_USERNAME}
+      - GRAFANA_PROMETHEUS_PASSWORD=${GRAFANA_PROMETHEUS_PASSWORD}
+    networks:
+      - splitora-infra-network
+
+volumes:
+  app-logs:
+
+networks:
+  splitora-infra-network:
+    driver: bridge
