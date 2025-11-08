@@ -5,6 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class SecurityConstants {
+
+    private SecurityConstants() {}
+
     public static final List<String> WHITELISTED_URLS = new ArrayList<>(Arrays.asList(
             "/api/v1/auth/login",
             "/api/v1/auth/refresh_token",
@@ -14,6 +17,7 @@ public class SecurityConstants {
             "/api/v1/oauth2/callback",
             "/api/v1/health/ping",
             "/v3/api-docs",
-            "/swagger-ui"
+            "/swagger-ui",
+            "/actuator"
     ));
 }

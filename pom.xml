@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.satwik</groupId>
 	<artifactId>splitora</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>v2.0.3</version>
 	<name>Splitora</name>
 	<description>Spring App - Splitora</description>
 	<properties>
@@ -144,6 +144,19 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
+
+		<!--		actuator-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<!--		micrometer-->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>
